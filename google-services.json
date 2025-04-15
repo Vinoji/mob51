@@ -1,0 +1,29 @@
+{
+    "project_info": {
+      "project_number": "745305028052",
+      "project_id": "mobifix-4a6b9",
+      "storage_bucket": "mobifix-4a6b9.firebasestorage.app"
+    },
+    "client": [
+      {
+        "client_info": {
+          "mobilesdk_app_id": "1:745305028052:android:1c44e7effc06f0fcc25241",
+          "android_client_info": {
+            "package_name": "com.mobifix"
+          }
+        },
+        "oauth_client": [],
+        "api_key": [
+          {
+            "current_key": "AIzaSyD99XeDxVQ_MXpqNin-Lc8i5XNIIo4lMLw"
+          }
+        ],
+        "services": {
+          "appinvite_service": {
+            "other_platform_oauth_client": []
+          }
+        }
+      }
+    ],
+    "configuration_version": "1"
+  }
