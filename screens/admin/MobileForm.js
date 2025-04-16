@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, ScrollView, Image, TouchableOpacity,Switch  } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { addMobile, updateMobile, getMobileById } from '../../services/enhancedMobileService';
@@ -19,6 +19,8 @@ const MobileForm = ({ route, navigation }) => {
     storageSize: '',
     condition: 'New',
     conditionDetails: null,
+    isTodayDeal: false,
+    isBestSelling: false,
   });
   const [imageUri, setImageUri] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -200,7 +202,23 @@ const MobileForm = ({ route, navigation }) => {
           <Picker.Item key={condition} label={condition} value={condition} />
         ))}
       </Picker>
+      <View style={styles.switchContainer}>
+  <Text style={styles.label}>Today's Deal</Text>
+  <Switch
+    value={mobile.isTodayDeal}
+    onValueChange={(value) => handleChange('isTodayDeal', value)}
+    trackColor={{ false: "#767577", true: "#4CAF50" }}
+  />
+</View>
 
+<View style={styles.switchContainer}>
+  <Text style={styles.label}>Best Selling</Text>
+  <Switch
+    value={mobile.isBestSelling}
+    onValueChange={(value) => handleChange('isBestSelling', value)}
+    trackColor={{ false: "#767577", true: "#4CAF50" }}
+  />
+</View>
       {mobile.condition === 'Used' && (
         <>
           <Text style={styles.label}>Condition Details</Text>
@@ -300,6 +318,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: 'white',
+    borderRadius: 5,
+    marginBottom: 15,
   },
 });
 

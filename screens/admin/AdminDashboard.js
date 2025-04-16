@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useFetchMobiles } from '../../services/enhancedMobileService';
+import { useFetchMobiles,toggleMobileStatus} from '../../services/enhancedMobileService';
 import { useNavigation } from '@react-navigation/native';
 
 const AdminDashboard = () => {
@@ -37,6 +37,25 @@ const AdminDashboard = () => {
             <Text style={styles.mobileName}>{item.name}</Text>
             <Text style={styles.mobileBrand}>{item.brand}</Text>
             <Text style={styles.mobilePrice}>${item.price}</Text>
+            <View style={styles.adminControls}>
+      <TouchableOpacity 
+        style={[styles.statusButton, item.isTodayDeal && styles.activeStatus]}
+        onPress={() => toggleMobileStatus(item.id, 'isTodayDeal')}
+      >
+        <Text style={[styles.statusButtonText, item.isTodayDeal && styles.activeStatusText]}>
+          Today's Deal
+        </Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={[styles.statusButton, item.isBestSelling && styles.activeStatus]}
+        onPress={() => toggleMobileStatus(item.id, 'isBestSelling')}
+      >
+        <Text style={[styles.statusButtonText, item.isBestSelling && styles.activeStatusText]}>
+          Best Selling
+        </Text>
+      </TouchableOpacity>
+    </View>
           </TouchableOpacity>
         )}
       />
@@ -91,6 +110,30 @@ const styles = StyleSheet.create({
     color: '#007bff',
     fontWeight: 'bold',
   },
+  adminControls: {
+    flexDirection: 'row',
+    marginTop: 10,
+    justifyContent: 'space-around',
+  },
+  statusButton: {
+    padding: 8,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  activeStatus: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#4CAF50',
+  },
+  statusButtonText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  activeStatusText: {
+    color: 'white',
+  }
 });
 
 export default AdminDashboard;

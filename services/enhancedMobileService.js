@@ -12,7 +12,8 @@ import {
   where,
   orderBy,
   limit,
-  getDoc
+  getDoc,
+  serverTimestamp
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { useState, useEffect } from "react";
@@ -83,6 +84,8 @@ export const addMobile = async (mobile, imageUri) => {
       storageSize: mobile.storageSize || '',
       condition: mobile.condition || 'New',
       conditionDetails: mobile.conditionDetails || null,
+      isBestSelling: mobile.isBestSelling || false,
+      isTodayDeal: mobile.isTodayDeal || false,
       createdAt: new Date(),
     };
     
@@ -130,6 +133,62 @@ export const useFetchMobiles = () => {
 
     return () => unsubscribe();
   }, []);
+
+  return { mobiles, loading };
+};
+
+// **Fetch Best Selling Mobiles**
+export const useFetchBestSellingMobiles = (limit = 5) => {
+  const [mobiles, setMobiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const mobilesRef = collection(db, "mobiles");
+    const q = query(
+      mobilesRef, 
+      where("isBestSelling", "==", true),
+      limit(limit)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const mobilesData = snapshot.docs.map((doc) => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      setMobiles(mobilesData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [limit]);
+
+  return { mobiles, loading };
+};
+
+// **Fetch Today's Deal Mobiles**
+export const useFetchTodayDealMobiles = (limit = 5) => {
+  const [mobiles, setMobiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const mobilesRef = collection(db, "mobiles");
+    const q = query(
+      mobilesRef, 
+      where("isTodayDeal", "==", true),
+      limit(limit)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const mobilesData = snapshot.docs.map((doc) => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      setMobiles(mobilesData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [limit]);
 
   return { mobiles, loading };
 };
@@ -188,6 +247,34 @@ export const useFeaturedMobiles = (limit = 5) => {
   return { mobiles, loading };
 };
 
+// **Toggle Best Selling Status**
+export const toggleBestSelling = async (id, status) => {
+  try {
+    const mobileRef = doc(db, "mobiles", id);
+    await updateDoc(mobileRef, {
+      isBestSelling: status
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling best selling status: ", error);
+    throw error;
+  }
+};
+
+// **Toggle Today's Deal Status**
+export const toggleTodayDeal = async (id, status) => {
+  try {
+    const mobileRef = doc(db, "mobiles", id);
+    await updateDoc(mobileRef, {
+      isTodayDeal: status
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling today's deal status: ", error);
+    throw error;
+  }
+};
+
 // **Update Mobile with optional Image Update**
 export const updateMobile = async (id, updatedMobile, newImageUri) => {
   try {
@@ -204,6 +291,8 @@ export const updateMobile = async (id, updatedMobile, newImageUri) => {
       storageSize: updatedMobile.storageSize || '',
       condition: updatedMobile.condition || 'New',
       conditionDetails: updatedMobile.conditionDetails || null,
+      isBestSelling: updatedMobile.isBestSelling || false,
+      isTodayDeal: updatedMobile.isTodayDeal || false,
       updatedAt: new Date(),
     };
 
@@ -354,6 +443,15 @@ export const filterMobiles = async (filters) => {
       if (filters.condition) {
         results = results.filter(mobile => mobile.condition === filters.condition);
       }
+      
+      // Added filters for Best Selling and Today's Deal
+      if (filters.isBestSelling !== undefined) {
+        results = results.filter(mobile => mobile.isBestSelling === filters.isBestSelling);
+      }
+      
+      if (filters.isTodayDeal !== undefined) {
+        results = results.filter(mobile => mobile.isTodayDeal === filters.isTodayDeal);
+      }
     }
     
     return results;
@@ -446,7 +544,6 @@ export const removeGalleryImage = async (mobileId, imageUrl) => {
 };
 
 // **Add Mobile Review**
-// Example for addMobileReview
 export const addMobileReview = async (mobileId, review) => {
   try {
     const reviewData = {
@@ -509,7 +606,7 @@ export const useFetchMobileReviews = (mobileId) => {
   return { reviews, loading };
 };
 
-// In enhancedMobileService.js
+// **Fetch Reviews Paginated**
 export const fetchReviewsPaginated = async (mobileId, lastVisible = null) => {
   let q = query(
     collection(db, "mobileReviews"),
@@ -527,4 +624,82 @@ export const fetchReviewsPaginated = async (mobileId, lastVisible = null) => {
   const newLastVisible = snapshot.docs[snapshot.docs.length - 1];
 
   return { reviews, lastVisible: newLastVisible };
+};
+
+export const useTodayDeals = () => {
+  const [mobiles, setMobiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const mobilesRef = collection(db, "mobiles");
+    const q = query(
+      mobilesRef, 
+      where("isTodayDeal", "==", true),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const mobilesData = snapshot.docs.map((doc) => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      setMobiles(mobilesData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [limit]);
+
+  return { mobiles, loading };
+};
+
+// **Fetch Best Selling Mobiles**
+export const useBestSelling = () => {
+  const [mobiles, setMobiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const mobilesRef = collection(db, "mobiles");
+    const q = query(
+      mobilesRef, 
+      where("isBestSelling", "==", true),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const mobilesData = snapshot.docs.map((doc) => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      }));
+      setMobiles(mobilesData);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [limit]);
+
+  return { mobiles, loading };
+};
+
+// **Toggle Mobile Status (Today's Deal/Best Selling)**
+export const toggleMobileStatus = async (mobileId, field) => {
+  try {
+    const mobileRef = doc(db, "mobiles", mobileId);
+    const docSnap = await getDoc(mobileRef);
+    
+    if (docSnap.exists()) {
+      const currentValue = docSnap.data()[field] || false;
+      await updateDoc(mobileRef, {
+        [field]: !currentValue,
+        updatedAt: serverTimestamp()
+      });
+      return !currentValue;
+    }
+    return false;
+  } catch (error) {
+    console.error(`Error toggling ${field}:`, error);
+    throw error;
+  }
 };

@@ -1,5 +1,5 @@
 import React, { useState,useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity,Alert} from 'react-native';
 import { getMobileById, addMobileReview } from '../../services/enhancedMobileService';
 import { useFetchMobileReviews } from '../../services/enhancedMobileService';
 import LoadingIndicator from '../../components/LoadingIndicator';
