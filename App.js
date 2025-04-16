@@ -6,7 +6,7 @@ import AppNavigator from "./navigation/AppNavigator";
 export default function App() {
   return (
     <NavigationContainer>
-      <AppNavigator isAdmin={true} />
+      <AppNavigator isAdmin={false} />
     </NavigationContainer>
   );
 }
