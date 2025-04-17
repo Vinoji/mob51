@@ -21,7 +21,6 @@ const MobileForm = ({ route, navigation }) => {
     conditionDetails: null,
     isTodayDeal: false,
     isBestSelling: false,
-    imageUrl: null, // Add imageUrl field to store the image path from JSON
   });
   const [imageUri, setImageUri] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +33,6 @@ const MobileForm = ({ route, navigation }) => {
     ramSize: false,
     storageSize: false,
   });
-  const [isCustomImage, setIsCustomImage] = useState(false);
 
   useEffect(() => {
     if (mobileId) {
@@ -49,25 +47,11 @@ const MobileForm = ({ route, navigation }) => {
     setBrandModels(selectedBrandMobiles?.mobiles || []);
   }, [mobile.brand]);
 
-  useEffect(() => {
-    // If model changes, check if we should load an image from the mobiles data
-    if (mobile.name && !isCustomImage) {
-      const selectedBrandMobiles = mobiles.find(item => item.brandName === mobile.brand);
-      const selectedModel = selectedBrandMobiles?.mobiles.find(model => model.name === mobile.name);
-      
-      if (selectedModel?.image) {
-        setImageUri(selectedModel.image);
-        handleChange('imageUrl', selectedModel.image);
-      }
-    }
-  }, [mobile.name, mobile.brand]);
-
   const loadMobileData = async () => {
     try {
       setIsLoading(true);
       const mobileData = await getMobileById(mobileId);
       setMobile(mobileData);
-      
       if (mobileData.imageUrl) {
         setImageUri(mobileData.imageUrl);
       }
@@ -96,16 +80,13 @@ const MobileForm = ({ route, navigation }) => {
     });
 
     if (!result.canceled) {
-      setIsCustomImage(true);
       setImageUri(result.assets[0].uri);
-      handleChange('imageUrl', result.assets[0].uri);
     }
   };
 
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
-      // Pass the image URI to the service functions
       if (isEditing) {
         await updateMobile(mobileId, mobile, imageUri);
       } else {
@@ -121,12 +102,6 @@ const MobileForm = ({ route, navigation }) => {
 
   const handleChange = (field, value) => {
     setMobile(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleModelChange = (modelName) => {
-    // Reset custom image flag when model is changed
-    setIsCustomImage(false);
-    handleChange('name', modelName);
   };
 
   const toggleCustomInput = (field) => {
@@ -183,18 +158,7 @@ const MobileForm = ({ route, navigation }) => {
       <Text style={styles.title}>{isEditing ? 'Edit Mobile' : 'Add New Mobile'}</Text>
 
       {imageUri && (
-        <View style={styles.imageContainer}>
-          <Image source={typeof imageUri === 'number' ? imageUri : { uri: imageUri }} style={styles.image} />
-          {isCustomImage && (
-            <TouchableOpacity style={styles.removeImageButton} onPress={() => {
-              setImageUri(null);
-              handleChange('imageUrl', null);
-              setIsCustomImage(false);
-            }}>
-              <Text style={styles.removeImageText}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <Image source={{ uri: imageUri }} style={styles.image} />
       )}
       
       <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
@@ -217,7 +181,7 @@ const MobileForm = ({ route, navigation }) => {
         <Picker
           selectedValue={mobile.name}
           style={[styles.picker, styles.modelPicker]}
-          onValueChange={(itemValue) => handleModelChange(itemValue)}
+          onValueChange={(itemValue) => handleChange('name', itemValue)}
         >
           <Picker.Item label="Select Model" value="" />
           {brandModels.map((model) => (
@@ -229,10 +193,7 @@ const MobileForm = ({ route, navigation }) => {
           style={[styles.input, styles.modelInput]}
           placeholder="Custom Model Name"
           value={brandModels.some(model => model.name === mobile.name) ? '' : mobile.name}
-          onChangeText={(text) => {
-            setIsCustomImage(false);
-            handleChange('name', text);
-          }}
+          onChangeText={(text) => handleChange('name', text)}
         />
       </View>
 
@@ -333,31 +294,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  imageContainer: {
-    position: 'relative',
-    marginBottom: 10,
-  },
   image: {
     width: '100%',
     height: 200,
     resizeMode: 'contain',
+    marginBottom: 10,
     borderRadius: 5,
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  removeImageText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   imageButton: {
     backgroundColor: '#6c757d',
