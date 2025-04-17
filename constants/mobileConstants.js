@@ -1,15 +1,36 @@
 // constants/mobileConstants.js
 
 export const categories = [
-    { id: 1, name: 'Apple', image: require('../assets/brands/apple.png') },
-    { id: 2, name: 'Asus', image: require('../assets/brands/asus.png') },
-    { id: 3, name: 'Samsung', image: require('../assets/brands/samsung.png') },
-    { id: 4, name: 'Google', image: require('../assets/brands/google.png') },
-    { id: 5, name: 'Poco', image: require('../assets/brands/poco.png') },
-    { id: 6, name: 'OnePlus', image: require('../assets/brands/oneplus.png') },
-    { id: 7, name: 'Motorola', image: require('../assets/brands/motorola.png') },
-    { id: 8, name: 'Nokia', image: require('../assets/brands/nokia.png') },
-  ];
+  { id: 1, name: 'Apple', image: require('../assets/brands/apple.png') },
+  { id: 2, name: 'Asus', image: require('../assets/brands/asus.png') },
+  { id: 3, name: 'CMF', image: require('../assets/brands/cmf.png') },
+  { id: 4, name: 'Google', image: require('../assets/brands/google.png') },
+  { id: 5, name: 'Honor', image: require('../assets/brands/Honor.png') },
+  { id: 6, name: 'Huawei', image: require('../assets/brands/huawei.png') },
+  { id: 7, name: 'Infinix', image: require('../assets/brands/infinix.png') },
+  { id: 8, name: 'Intex', image: require('../assets/brands/intex.png') },
+  { id: 9, name: 'IQOO', image: require('../assets/brands/iqoo.png') },
+  { id: 10, name: 'Karbonn', image: require('../assets/brands/karbon.png') },
+  { id: 11, name: 'Lava', image: require('../assets/brands/lava.png') },
+  { id: 12, name: 'Lenovo', image: require('../assets/brands/lenovo.png') },
+  { id: 13, name: 'LG', image: require('../assets/brands/lg.png') },
+  { id: 14, name: 'Xiaomi', image: require('../assets/brands/mi.png') },
+  { id: 15, name: 'Micromax', image: require('../assets/brands/micromax.png') },
+  { id: 16, name: 'Motorola', image: require('../assets/brands/motorola.png') },
+  { id: 17, name: 'Nokia', image: require('../assets/brands/nokia.png') },
+  { id: 18, name: 'Nothing', image: require('../assets/brands/nothing.png') },
+  { id: 19, name: 'OnePlus', image: require('../assets/brands/oneplus.png') },
+  { id: 20, name: 'Oppo', image: require('../assets/brands/oppo.png') },
+  { id: 21, name: 'Poco', image: require('../assets/brands/poco.png') },
+  { id: 22, name: 'Realme', image: require('../assets/brands/realme.png') },
+  { id: 23, name: 'Redmi', image: require('../assets/brands/redmi.png') },
+  { id: 24, name: 'Reliance', image: require('../assets/brands/reliance.png') },
+  { id: 25, name: 'Samsung', image: require('../assets/brands/samsung.png') },
+  { id: 26, name: 'Sony', image: require('../assets/brands/sony.png') },
+  { id: 27, name: 'TCL', image: require('../assets/brands/tcl.png') },
+  { id: 28, name: 'Tecno', image: require('../assets/brands/tecno.png') },
+  { id: 29, name: 'Vivo', image: require('../assets/brands/vivo.png') },
+];
   
 
   export  const mobiles =[
