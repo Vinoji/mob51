@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, ScrollView, Image, TouchableOpacity,Switch  } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, ScrollView, Image, TouchableOpacity, Switch } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { addMobile, updateMobile, getMobileById } from '../../services/enhancedMobileService';
-import { categories, screenSizes, batteryCapacities, cameraQualities, ramSizes, storageSizes, conditions, mobileConditions } from '../../constants/mobileConstants';
+import { categories, screenSizes, batteryCapacities, cameraQualities, ramSizes, storageSizes, conditions, mobileConditions, mobiles } from '../../constants/mobileConstants';
 
 const MobileForm = ({ route, navigation }) => {
   const { mobileId } = route.params || {};
@@ -21,10 +21,20 @@ const MobileForm = ({ route, navigation }) => {
     conditionDetails: null,
     isTodayDeal: false,
     isBestSelling: false,
+    imageUrl: null, // Add imageUrl field to store the image path from JSON
   });
   const [imageUri, setImageUri] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [brandModels, setBrandModels] = useState([]);
+  const [customInputs, setCustomInputs] = useState({
+    screenSize: false,
+    batteryCapacity: false,
+    cameraQuality: false,
+    ramSize: false,
+    storageSize: false,
+  });
+  const [isCustomImage, setIsCustomImage] = useState(false);
 
   useEffect(() => {
     if (mobileId) {
@@ -33,14 +43,43 @@ const MobileForm = ({ route, navigation }) => {
     }
   }, [mobileId]);
 
+  useEffect(() => {
+    // Update available models when brand changes
+    const selectedBrandMobiles = mobiles.find(item => item.brandName === mobile.brand);
+    setBrandModels(selectedBrandMobiles?.mobiles || []);
+  }, [mobile.brand]);
+
+  useEffect(() => {
+    // If model changes, check if we should load an image from the mobiles data
+    if (mobile.name && !isCustomImage) {
+      const selectedBrandMobiles = mobiles.find(item => item.brandName === mobile.brand);
+      const selectedModel = selectedBrandMobiles?.mobiles.find(model => model.name === mobile.name);
+      
+      if (selectedModel?.image) {
+        setImageUri(selectedModel.image);
+        handleChange('imageUrl', selectedModel.image);
+      }
+    }
+  }, [mobile.name, mobile.brand]);
+
   const loadMobileData = async () => {
     try {
       setIsLoading(true);
       const mobileData = await getMobileById(mobileId);
       setMobile(mobileData);
+      
       if (mobileData.imageUrl) {
         setImageUri(mobileData.imageUrl);
       }
+      
+      // Check if any values are custom (not in the predefined lists)
+      setCustomInputs({
+        screenSize: !screenSizes.includes(mobileData.screenSize) && mobileData.screenSize !== '',
+        batteryCapacity: !batteryCapacities.includes(mobileData.batteryCapacity) && mobileData.batteryCapacity !== '',
+        cameraQuality: !cameraQualities.includes(mobileData.cameraQuality) && mobileData.cameraQuality !== '',
+        ramSize: !ramSizes.includes(mobileData.ramSize) && mobileData.ramSize !== '',
+        storageSize: !storageSizes.includes(mobileData.storageSize) && mobileData.storageSize !== '',
+      });
     } catch (error) {
       console.error('Error loading mobile:', error);
     } finally {
@@ -57,13 +96,16 @@ const MobileForm = ({ route, navigation }) => {
     });
 
     if (!result.canceled) {
+      setIsCustomImage(true);
       setImageUri(result.assets[0].uri);
+      handleChange('imageUrl', result.assets[0].uri);
     }
   };
 
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
+      // Pass the image URI to the service functions
       if (isEditing) {
         await updateMobile(mobileId, mobile, imageUri);
       } else {
@@ -81,24 +123,83 @@ const MobileForm = ({ route, navigation }) => {
     setMobile(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleModelChange = (modelName) => {
+    // Reset custom image flag when model is changed
+    setIsCustomImage(false);
+    handleChange('name', modelName);
+  };
+
+  const toggleCustomInput = (field) => {
+    setCustomInputs(prev => {
+      const updated = { ...prev, [field]: !prev[field] };
+      if (updated[field]) {
+        // Clear the field value when switching to custom input
+        handleChange(field, '');
+      }
+      return updated;
+    });
+  };
+
+  const renderSpecificationField = (field, label, options, placeholder) => {
+    return (
+      <>
+        <View style={styles.fieldHeaderContainer}>
+          <Text style={styles.label}>{label}</Text>
+          <TouchableOpacity 
+            style={styles.customInputToggle} 
+            onPress={() => toggleCustomInput(field)}
+          >
+            <Text style={styles.customInputToggleText}>
+              {customInputs[field] ? 'Use Dropdown' : 'Custom Input'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
+        {customInputs[field] ? (
+          <TextInput
+            style={styles.input}
+            placeholder={`Enter custom ${label.toLowerCase()}`}
+            value={mobile[field]}
+            onChangeText={(text) => handleChange(field, text)}
+          />
+        ) : (
+          <Picker
+            selectedValue={mobile[field]}
+            style={styles.picker}
+            onValueChange={(itemValue) => handleChange(field, itemValue)}
+          >
+            <Picker.Item label={placeholder} value="" />
+            {options.map((option) => (
+              <Picker.Item key={option} label={option} value={option} />
+            ))}
+          </Picker>
+        )}
+      </>
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{isEditing ? 'Edit Mobile' : 'Add New Mobile'}</Text>
 
       {imageUri && (
-        <Image source={{ uri: imageUri }} style={styles.image} />
+        <View style={styles.imageContainer}>
+          <Image source={typeof imageUri === 'number' ? imageUri : { uri: imageUri }} style={styles.image} />
+          {isCustomImage && (
+            <TouchableOpacity style={styles.removeImageButton} onPress={() => {
+              setImageUri(null);
+              handleChange('imageUrl', null);
+              setIsCustomImage(false);
+            }}>
+              <Text style={styles.removeImageText}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
       
       <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
         <Text style={styles.imageButtonText}>{imageUri ? 'Change Image' : 'Select Image'}</Text>
       </TouchableOpacity>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Mobile Name"
-        value={mobile.name}
-        onChangeText={(text) => handleChange('name', text)}
-      />
 
       <Text style={styles.label}>Brand</Text>
       <Picker
@@ -110,6 +211,30 @@ const MobileForm = ({ route, navigation }) => {
           <Picker.Item key={category.id} label={category.name} value={category.name} />
         ))}
       </Picker>
+
+      <Text style={styles.label}>Model</Text>
+      <View style={styles.modelSelectionContainer}>
+        <Picker
+          selectedValue={mobile.name}
+          style={[styles.picker, styles.modelPicker]}
+          onValueChange={(itemValue) => handleModelChange(itemValue)}
+        >
+          <Picker.Item label="Select Model" value="" />
+          {brandModels.map((model) => (
+            <Picker.Item key={model.id} label={model.name} value={model.name} />
+          ))}
+        </Picker>
+        <Text style={styles.orText}>OR</Text>
+        <TextInput
+          style={[styles.input, styles.modelInput]}
+          placeholder="Custom Model Name"
+          value={brandModels.some(model => model.name === mobile.name) ? '' : mobile.name}
+          onChangeText={(text) => {
+            setIsCustomImage(false);
+            handleChange('name', text);
+          }}
+        />
+      </View>
 
       <TextInput
         style={styles.input}
@@ -130,65 +255,11 @@ const MobileForm = ({ route, navigation }) => {
 
       <Text style={styles.sectionTitle}>Specifications</Text>
 
-      <Text style={styles.label}>Screen Size</Text>
-      <Picker
-        selectedValue={mobile.screenSize}
-        style={styles.picker}
-        onValueChange={(itemValue) => handleChange('screenSize', itemValue)}
-      >
-        <Picker.Item label="Select Screen Size" value="" />
-        {screenSizes.map((size) => (
-          <Picker.Item key={size} label={size} value={size} />
-        ))}
-      </Picker>
-
-      <Text style={styles.label}>Battery Capacity</Text>
-      <Picker
-        selectedValue={mobile.batteryCapacity}
-        style={styles.picker}
-        onValueChange={(itemValue) => handleChange('batteryCapacity', itemValue)}
-      >
-        <Picker.Item label="Select Battery Capacity" value="" />
-        {batteryCapacities.map((capacity) => (
-          <Picker.Item key={capacity} label={capacity} value={capacity} />
-        ))}
-      </Picker>
-
-      <Text style={styles.label}>Camera Quality</Text>
-      <Picker
-        selectedValue={mobile.cameraQuality}
-        style={styles.picker}
-        onValueChange={(itemValue) => handleChange('cameraQuality', itemValue)}
-      >
-        <Picker.Item label="Select Camera Quality" value="" />
-        {cameraQualities.map((quality) => (
-          <Picker.Item key={quality} label={quality} value={quality} />
-        ))}
-      </Picker>
-
-      <Text style={styles.label}>RAM Size</Text>
-      <Picker
-        selectedValue={mobile.ramSize}
-        style={styles.picker}
-        onValueChange={(itemValue) => handleChange('ramSize', itemValue)}
-      >
-        <Picker.Item label="Select RAM Size" value="" />
-        {ramSizes.map((size) => (
-          <Picker.Item key={size} label={size} value={size} />
-        ))}
-      </Picker>
-
-      <Text style={styles.label}>Storage Size</Text>
-      <Picker
-        selectedValue={mobile.storageSize}
-        style={styles.picker}
-        onValueChange={(itemValue) => handleChange('storageSize', itemValue)}
-      >
-        <Picker.Item label="Select Storage Size" value="" />
-        {storageSizes.map((size) => (
-          <Picker.Item key={size} label={size} value={size} />
-        ))}
-      </Picker>
+      {renderSpecificationField('screenSize', 'Screen Size', screenSizes, 'Select Screen Size')}
+      {renderSpecificationField('batteryCapacity', 'Battery Capacity', batteryCapacities, 'Select Battery Capacity')}
+      {renderSpecificationField('cameraQuality', 'Camera Quality', cameraQualities, 'Select Camera Quality')}
+      {renderSpecificationField('ramSize', 'RAM Size', ramSizes, 'Select RAM Size')}
+      {renderSpecificationField('storageSize', 'Storage Size', storageSizes, 'Select Storage Size')}
 
       <Text style={styles.sectionTitle}>Condition</Text>
 
@@ -202,23 +273,25 @@ const MobileForm = ({ route, navigation }) => {
           <Picker.Item key={condition} label={condition} value={condition} />
         ))}
       </Picker>
-      <View style={styles.switchContainer}>
-  <Text style={styles.label}>Today's Deal</Text>
-  <Switch
-    value={mobile.isTodayDeal}
-    onValueChange={(value) => handleChange('isTodayDeal', value)}
-    trackColor={{ false: "#767577", true: "#4CAF50" }}
-  />
-</View>
 
-<View style={styles.switchContainer}>
-  <Text style={styles.label}>Best Selling</Text>
-  <Switch
-    value={mobile.isBestSelling}
-    onValueChange={(value) => handleChange('isBestSelling', value)}
-    trackColor={{ false: "#767577", true: "#4CAF50" }}
-  />
-</View>
+      <View style={styles.switchContainer}>
+        <Text style={styles.label}>Today's Deal</Text>
+        <Switch
+          value={mobile.isTodayDeal}
+          onValueChange={(value) => handleChange('isTodayDeal', value)}
+          trackColor={{ false: "#767577", true: "#4CAF50" }}
+        />
+      </View>
+
+      <View style={styles.switchContainer}>
+        <Text style={styles.label}>Best Selling</Text>
+        <Switch
+          value={mobile.isBestSelling}
+          onValueChange={(value) => handleChange('isBestSelling', value)}
+          trackColor={{ false: "#767577", true: "#4CAF50" }}
+        />
+      </View>
+
       {mobile.condition === 'Used' && (
         <>
           <Text style={styles.label}>Condition Details</Text>
@@ -260,12 +333,31 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
+  imageContainer: {
+    position: 'relative',
+    marginBottom: 10,
+  },
   image: {
     width: '100%',
     height: 200,
     resizeMode: 'contain',
-    marginBottom: 10,
     borderRadius: 5,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeImageText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   imageButton: {
     backgroundColor: '#6c757d',
@@ -327,6 +419,36 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 5,
     marginBottom: 15,
+  },
+  fieldHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  customInputToggle: {
+    backgroundColor: '#007bff',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  customInputToggleText: {
+    color: 'white',
+    fontSize: 12,
+  },
+  modelSelectionContainer: {
+    marginBottom: 15,
+  },
+  modelPicker: {
+    marginBottom: 5,
+  },
+  modelInput: {
+    marginTop: 5,
+  },
+  orText: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    marginVertical: 5,
   },
 });
 

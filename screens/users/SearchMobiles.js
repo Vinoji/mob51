@@ -179,7 +179,10 @@ const SearchMobiles = () => {
         renderItem={({ item }) => (
           <TouchableOpacity 
             style={styles.resultItem}
-            onPress={() => navigation.navigate('MobileDetails', { mobileId: item.id, isAdmin: false })}
+            onPress={() => navigation.navigate('Home', { 
+              screen: 'MobileDetails', 
+              params: { mobileId: item.id, isAdmin: false }
+            })}
           >
             <Text style={styles.resultName}>{item.name}</Text>
             <Text style={styles.resultBrand}>{item.brand}</Text>
