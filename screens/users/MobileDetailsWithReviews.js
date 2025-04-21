@@ -1,16 +1,18 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity,Alert} from 'react-native';
 import { getMobileById, addMobileReview } from '../../services/enhancedMobileService';
-import { useFetchMobileReviews } from '../../services/enhancedMobileService';
+import { useFetchMobileReviews,toggleFavorite } from '../../services/enhancedMobileService';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import ErrorView from '../../components/ErrorView';
-
-
+import { AuthContext } from '../../contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 const MobileDetailsWithReviews = ({ route }) => {
+  const { user } = useContext(AuthContext);
   const { mobileId } = route.params;
   const [mobile, setMobile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(false);
   const [review, setReview] = useState({
     rating: 5,
     comment: '',
@@ -37,7 +39,20 @@ const MobileDetailsWithReviews = ({ route }) => {
   if (loading) {
     return <LoadingIndicator />;
   }
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      // Handle not logged in case - maybe show login prompt
+      alert("Please log in to add favorites");
+      return;
+    }
 
+    try {
+      const result = await toggleFavorite(user.uid, mobileId);
+      setIsFavorite(result.isFavorite);
+    } catch (error) {
+      console.error("Error toggling favorite: ", error);
+    }
+  };
   if (error) {
     return <ErrorView message={error} onRetry={loadMobile} />;
   }
@@ -77,7 +92,16 @@ const MobileDetailsWithReviews = ({ route }) => {
       {mobile.imageUrl && (
         <Image source={{ uri: mobile.imageUrl }} style={styles.image} />
       )}
-
+ <TouchableOpacity 
+          style={styles.favoriteButton}
+          onPress={handleToggleFavorite}
+        >
+          <Ionicons 
+            name={isFavorite ? "heart" : "heart-outline"} 
+            size={28} 
+            color={isFavorite ? "red" : "black"} 
+          />
+        </TouchableOpacity>
       <View style={styles.header}>
         <Text style={styles.name}>{mobile.name}</Text>
         <Text style={styles.brand}>{mobile.brand}</Text>
@@ -191,6 +215,15 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 20,
+    padding: 10,
+    zIndex: 10,
   },
   name: {
     fontSize: 24,

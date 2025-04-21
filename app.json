@@ -22,7 +22,18 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "config": {
+        "firebase": {
+          "apiKey": "AIzaSyAylLvgrdmerQFuKgsOFjEG9ylmEQewDbg",
+          "authDomain": "mobifix-4a6b9.firebaseapp.com",
+          "projectId": "mobifix-4a6b9",
+          "storageBucket": "mobifix-4a6b9.firebasestorage.app",
+          "messagingSenderId": "745305028052",
+          "appId": "1:745305028052:web:d4c2b451fae0b314c25241",
+          "measurementId": "G-40BJHYXH0Q"
+        }
+      }
     }
   }
 }

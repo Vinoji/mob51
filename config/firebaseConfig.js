@@ -1,9 +1,9 @@
-// firebaseConfig.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { arrayUnion, arrayRemove } from 'firebase/firestore';
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyAylLvgrdmerQFuKgsOFjEG9ylmEQewDbg",
   authDomain: "mobifix-4a6b9.firebaseapp.com",
   projectId: "mobifix-4a6b9",
@@ -18,4 +18,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-export { db, storage };
+export { db, storage, app };

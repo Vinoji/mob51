@@ -703,3 +703,122 @@ export const toggleMobileStatus = async (mobileId, field) => {
     throw error;
   }
 };
+
+// Add these functions to services/enhancedMobileService.js
+
+// **Toggle Favorite Status**
+export const toggleFavorite = async (userId, mobileId) => {
+  try {
+    const favoriteRef = collection(db, "favorites");
+    const q = query(
+      favoriteRef,
+      where("userId", "==", userId),
+      where("mobileId", "==", mobileId)
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    // If favorite exists, remove it
+    if (!snapshot.empty) {
+      const favoriteDoc = snapshot.docs[0];
+      await deleteDoc(doc(db, "favorites", favoriteDoc.id));
+      return { isFavorite: false };
+    } 
+    // Otherwise, add it
+    else {
+      await addDoc(collection(db, "favorites"), {
+        userId,
+        mobileId,
+        createdAt: serverTimestamp()
+      });
+      return { isFavorite: true };
+    }
+  } catch (error) {
+    console.error("Error toggling favorite status: ", error);
+    throw error;
+  }
+};
+
+// **Check if Mobile is Favorite**
+export const checkIsFavorite = async (userId, mobileId) => {
+  try {
+    const favoriteRef = collection(db, "favorites");
+    const q = query(
+      favoriteRef,
+      where("userId", "==", userId),
+      where("mobileId", "==", mobileId)
+    );
+    
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
+  } catch (error) {
+    console.error("Error checking favorite status: ", error);
+    throw error;
+  }
+};
+
+// **Get User Favorites**
+export const useFetchUserFavorites = (userId) => {
+  const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) {
+      setFavorites([]);
+      setLoading(false);
+      return () => {};
+    }
+
+    const fetchFavorites = async () => {
+      try {
+        // Get the user's favorite mobile IDs
+        const favoriteRef = collection(db, "favorites");
+        const q = query(
+          favoriteRef,
+          where("userId", "==", userId),
+          orderBy("createdAt", "desc")
+        );
+        
+        const unsubscribe = onSnapshot(q, async (snapshot) => {
+          const favoriteIds = snapshot.docs.map(doc => doc.data().mobileId);
+          
+          // If no favorites, return empty array
+          if (favoriteIds.length === 0) {
+            setFavorites([]);
+            setLoading(false);
+            return;
+          }
+          
+          // Get all the mobile details for the favorites
+          const mobilesData = [];
+          for (const id of favoriteIds) {
+            try {
+              const mobileData = await getMobileById(id);
+              mobilesData.push(mobileData);
+            } catch (error) {
+              console.error(`Error fetching mobile ${id}:`, error);
+            }
+          }
+          
+          setFavorites(mobilesData);
+          setLoading(false);
+        });
+        
+        return unsubscribe;
+      } catch (error) {
+        console.error("Error fetching favorites: ", error);
+        setLoading(false);
+        return () => {};
+      }
+    };
+
+    const unsubscribe = fetchFavorites();
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, [userId]);
+
+  return { favorites, loading };
+};
